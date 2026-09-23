@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Digital Bill Receipt</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; background: #020617; color: #f1f5f9;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    min-height: 100%;
+    display: flex; justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 460px; padding: 18px 12px 36px; }
+  .card {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 26px;
+    overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+  .banner {
+    background: linear-gradient(120deg, #059669, #0d9488, #4f46e5);
+    color: #fff; text-align: center; padding: 26px 18px 22px; position: relative;
+  }
+  .banner .tag {
+    display: inline-block; background: rgba(255,255,255,0.22); font-size: 10px;
+    font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase;
+    padding: 4px 11px; border-radius: 999px; margin-bottom: 9px;
+  }
+  .banner h1 { font-size: 21px; margin: 3px 0 3px; font-weight: 900; text-transform: uppercase; }
+  .banner p { margin: 1px 0; font-size: 11px; opacity: 0.92; font-weight: 600; }
+  .body { padding: 18px; }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+  .panel {
+    background: rgba(30,41,59,0.8); border: 1px solid #334155; border-radius: 18px;
+    padding: 14px; margin-bottom: 14px;
+  }
+  .label { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; }
+  .cust-name { font-size: 16px; font-weight: 900; margin: 3px 0 0; color: #fff; }
+  .cust-phone { font-size: 11px; color: #94a3b8; font-family: monospace; }
+  .invref { font-size: 11px; font-weight: 800; color: #34d399; font-family: monospace; }
+  .badge {
+    font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 5px 11px;
+    border-radius: 12px; border: 1px solid; white-space: nowrap;
+  }
+  .badge.paid { background: rgba(16,185,129,0.15); color: #6ee7b7; border-color: rgba(16,185,129,0.35); }
+  .badge.due { background: rgba(244,63,94,0.15); color: #fda4af; border-color: rgba(244,63,94,0.35); }
+  .section-title { font-size: 11px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; margin: 0 0 8px; }
+  .items-list { background: rgba(30,41,59,0.55); border: 1px solid #334155; border-radius: 18px; overflow: hidden; margin-bottom: 14px; }
+  .item-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid rgba(51,65,85,0.6); }
+  .item-row:last-child { border-bottom: none; }
+  .item-name { font-size: 12.5px; font-weight: 800; color: #fff; }
+  .item-meta { font-size: 10.5px; color: #94a3b8; font-weight: 600; margin-top: 1px; }
+  .item-total { font-size: 12.5px; font-weight: 900; color: #34d399; white-space: nowrap; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat { background: rgba(30,41,59,0.8); border: 1px solid #334155; border-radius: 18px; padding: 13px; }
+  .stat .v { font-size: 18px; font-weight: 900; margin-top: 3px; color: #fff; }
+  .due-wrap {
+    background: linear-gradient(160deg, rgba(76,5,25,0.55), rgba(15,23,42,0.4));
+    border: 1px solid rgba(136,19,55,0.5); border-radius: 18px; padding: 15px; margin-bottom: 6px;
+  }
+  .due-wrap .row + .row { margin-top: 9px; padding-top: 9px; border-top: 1px dashed rgba(136,19,55,0.5); }
+  .due-wrap .r-label { font-size: 11px; font-weight: 900; color: #fda4af; text-transform: uppercase; }
+  .due-wrap .r-amt { font-size: 15px; font-weight: 900; color: #fb7185; }
+  .due-wrap .a-label { font-size: 11px; font-weight: 900; color: #fcd34d; text-transform: uppercase; }
+  .due-wrap .a-amt { font-size: 17px; font-weight: 900; color: #fbbf24; }
+  .full-paid { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); border-radius: 18px; padding: 18px; text-align: center; margin-bottom: 6px; }
+  .full-paid .v { font-size: 14.5px; font-weight: 900; color: #34d399; }
+  .footer-note { text-align: center; font-size: 10.5px; color: #64748b; margin-top: 16px; line-height: 1.6; font-weight: 700; }
+  .no-data { text-align: center; padding: 50px 18px; color: #94a3b8; font-size: 13px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card">
+    <div class="no-data" id="loading">Bill data load ho raha hai...</div>
+  </div>
+  <p class="footer-note" id="poweredBy"></p>
+</div>
+
+<script>
+  const q = new URLSearchParams(window.location.search);
+  const shop = q.get('shop') || 'Digital Receipt';
+  const addr = q.get('addr') || '';
+  const mob = q.get('mob') || '';
+  const inv = q.get('inv');
+  const date = q.get('date') || '';
+  const cust = q.get('cust') || 'Valued Customer';
+  const phone = q.get('phone') || '';
+  const itemsRaw = q.get('items') || '';
+  const tot = parseFloat(q.get('tot') || '0');
+  const rec = parseFloat(q.get('rec') || '0');
+  const bal = parseFloat(q.get('bal') || '0');
+  const old = parseFloat(q.get('old') || '0');
+
+  function money(n) {
+    return Number(n || 0).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.title = shop + ' — Bill Receipt';
+  document.getElementById('poweredBy').textContent = '🧾 ' + shop + ' — Digital Bill Receipt System';
+
+  const card = document.getElementById('card');
+
+  if (!inv) {
+    card.innerHTML = '<div class="no-data">Ye link kisi valid bill se nahi khula.<br>Apni dukaan se poora QR dobara scan karein.</div>';
+  } else {
+    const isPaid = bal <= 0;
+    const combinedDue = bal + old;
+
+    const items = itemsRaw ? itemsRaw.split(';').filter(Boolean).map(s => {
+      const [name, qty, price] = s.split('|');
+      return { name: name || '', qty: parseFloat(qty || '0'), price: parseFloat(price || '0') };
+    }) : [];
+
+    let html = '';
+    html += '<div class="banner">';
+    html += '  <div class="tag">Verified Digital Bill Receipt</div>';
+    html += '  <h1>' + esc(shop) + '</h1>';
+    if (addr) html += '  <p>' + esc(addr) + '</p>';
+    if (mob) html += '  <p>Helpline: ' + esc(mob) + '</p>';
+    html += '</div>';
+    html += '<div class="body">';
+
+    html += '  <div class="panel">';
+    html += '    <div class="row" style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155">';
+    html += '      <span class="label">Customer Profile</span><span class="invref">Inv #' + esc(inv) + (date ? ' | ' + esc(date) : '') + '</span>';
+    html += '    </div>';
+    html += '    <div class="row">';
+    html += '      <div><div class="cust-name">' + esc(cust) + '</div>';
+    html += (phone && phone !== 'N/A' ? '<div class="cust-phone">' + esc(phone) + '</div>' : '') + '</div>';
+    html += '      <span class="badge ' + (isPaid ? 'paid' : 'due') + '">' + (isPaid ? 'Fully Paid' : 'Udhaar Pending') + '</span>';
+    html += '    </div>';
+    html += '  </div>';
+
+    if (items.length > 0) {
+      html += '  <div class="section-title">📦 Khareed Shuda Items Breakdown</div>';
+      html += '  <div class="items-list">';
+      items.forEach(it => {
+        html += '    <div class="item-row"><div><div class="item-name">' + esc(it.name) + '</div>';
+        html += '<div class="item-meta">' + money(it.qty) + ' x Rs ' + money(it.price) + '</div></div>';
+        html += '<div class="item-total">Rs ' + money(it.qty * it.price) + '</div></div>';
+      });
+      html += '  </div>';
+    }
+
+    html += '  <div class="grid2">';
+    html += '    <div class="stat"><div class="label">Grand Total</div><div class="v">Rs ' + money(tot) + '</div></div>';
+    html += '    <div class="stat"><div class="label">Cash Paid</div><div class="v" style="color:#34d399">Rs ' + money(rec) + '</div></div>';
+    html += '  </div>';
+
+    if (bal > 0 || old > 0) {
+      html += '  <div class="due-wrap">';
+      if (bal > 0) html += '    <div class="row"><span class="r-label">Is Bill Ka Udhaar Baqaya</span><span class="r-amt">Rs ' + money(bal) + '</span></div>';
+      if (old > 0) html += '    <div class="row"><span class="a-label">Purana Udhaar (Pichlay Bills)</span><span class="a-amt">Rs ' + money(old) + '</span></div>';
+      html += '    <div class="row"><span class="r-label">Total Milakar Baqaya</span><span class="r-amt" style="font-size:17px">Rs ' + money(combinedDue) + '</span></div>';
+      html += '  </div>';
+    } else {
+      html += '  <div class="full-paid"><div class="v">✅ Aapka Poora Hisaab Clear Hai — Koi Udhaar Baqaya Nahi</div></div>';
+    }
+
+    html += '</div>';
+    card.innerHTML = html;
+  }
+</script>
+</body>
+</html>
